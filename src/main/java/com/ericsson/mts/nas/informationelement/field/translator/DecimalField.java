@@ -25,7 +25,7 @@ public class DecimalField extends AbstractTranslatorField {
             int result = bitInputStream.bigReadBits(length).intValueExact();
             if (namedValueMap != null) {
                 String value = namedValueMap.get(result);
-                if (!value.isEmpty()) {
+                if (value != null && !value.isEmpty()) {
                     logger.trace("{}  result : {} (0x{})", name, value, String.format("%x", result));
                     formatWriter.stringValue(name, value);
                     return result;
@@ -41,7 +41,7 @@ public class DecimalField extends AbstractTranslatorField {
 
     @Override
     public String encode(Registry mainRegistry, XMLFormatReader r, StringBuilder binaryString) throws DecodingException {
-
+        logger.trace("encode field {} with length {}", name, length);
         if (r.exist(name) != null) {
             String value = r.stringValue(name);
 
@@ -51,7 +51,8 @@ public class DecimalField extends AbstractTranslatorField {
                 return String.format("%" + length + "s", Integer.toBinaryString(key.byteValue() & 0xFF)).replace(' ', '0');
             }
 
-            throw new DecodingException("Can't find key for the value " + value);
+            logger.trace("key : {} to byte value {}", length, value);
+            return String.format("%" + length + "s", Integer.toBinaryString(Integer.parseInt(value) & 0xFF)).replace(' ', '0');
         }
         return "";
     }

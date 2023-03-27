@@ -19,16 +19,16 @@ import java.util.List;
 import static com.ericsson.mts.nas.reader.Reader.encodeFields;
 import static com.ericsson.mts.nas.reader.XMLFormatReader.binaryToHex;
 
-public class MultipleField extends AbstractTranslatorField {
+public class ExtMultipleField extends AbstractTranslatorField {
 
     public String contentLength;
     public Integer nBit = 8;
     public List<AbstractField> pdu;
-
+    public Integer Extension = 0;
+    public Integer ConfigurationProtocol = 0;
 
     @Override
     public int decode(Registry mainRegistry, BitInputStream bitInputStream, FormatWriter formatWriter) throws IOException, DecodingException, DictionaryException, NotHandledException {
-
         if (contentLength.toLowerCase().contains("number")) {
             int result = bitInputStream.readBits(((DigitsField)pdu.get(0)).length);
             formatWriter.intValue(pdu.get(0).getName(), BigInteger.valueOf(result));
@@ -46,8 +46,14 @@ public class MultipleField extends AbstractTranslatorField {
 
         if(contentLength.toLowerCase().contains("length")){
             int i = 0;
-            int result = bitInputStream.bigReadBits(nBit).intValueExact();
-            formatWriter.intValue("LengthObject", BigInteger.valueOf(result));
+            int result = bitInputStream.bigReadBits(nBit).intValueExact() - 1;
+            formatWriter.intValue("Length", BigInteger.valueOf(result));
+
+            int rExt = bitInputStream.bigReadBits(Extension).intValueExact();
+            formatWriter.intValue("Extension", BigInteger.valueOf(rExt));
+
+            int rPPP = bitInputStream.bigReadBits(ConfigurationProtocol).intValueExact();
+            formatWriter.intValue("ConfigurationProtocol", BigInteger.valueOf(rPPP));
 
             BitInputStream buffer = new BitInputStream(new ByteArrayInputStream(Reader.readByte(result*8,nBit,bitInputStream,logger, formatWriter)));
 
@@ -70,15 +76,28 @@ public class MultipleField extends AbstractTranslatorField {
         StringBuilder hexaString = new StringBuilder();
         int i = 1;
 
-        if(r.exist("LengthObject") != null){
-            binaryToHex(binaryString.append(String.format("%"+nBit+"s", Integer.toBinaryString(Integer.valueOf(r.stringValue("LengthObject")).byteValue() & 0xFF)).replace(' ', '0')),hexaString,nBit);
+        logger.trace("Enter field {}", name);
+
+        if(r.exist("Length") != null){
+            Integer len = Integer.valueOf(r.stringValue("Length")) + 1;
+            logger.trace("Enter field {} {}", name, len);
+            binaryToHex(binaryString.append(String.format("%"+nBit+"s", Integer.toBinaryString(len.byteValue() & 0xFF)).replace(' ', '0')),hexaString,nBit);
         } else{
             binaryToHex(binaryString.append(String.format("%"+((AbstractTranslatorField)pdu.get(0)).length+"s", Integer.toBinaryString(Integer.valueOf(r.stringValue(pdu.get(0).getName())).byteValue() & 0xFF)).replace(' ', '0')),hexaString, ((AbstractTranslatorField)pdu.get(0)).length);
             pdu =  pdu.subList(1, pdu.size());
         }
 
+        if(r.exist("Extension") != null){
+            binaryToHex(binaryString.append(String.format("%"+Extension+"s", Integer.toBinaryString(Integer.valueOf(r.stringValue("Extension")).byteValue() & 0xFF)).replace(' ', '0')),hexaString,Extension);
+        }
+
+        if(r.exist("ConfigurationProtocol") != null){
+            binaryToHex(binaryString.append(String.format("%"+ConfigurationProtocol+"s", Integer.toBinaryString(Integer.valueOf(r.stringValue("ConfigurationProtocol")).byteValue() & 0xFF)).replace(' ', '0')),hexaString,ConfigurationProtocol);
+        }
+
         while(r.isElementExist()){
             logger.trace("Enter field {}", name+i);
+            logger.trace("Enter field {} -- {} -- {}", name, hexaString.toString(), binaryString.toString());
             r.enterObject(name+i);
             if(r.isElementExist()) {
                 encodeFields(pdu, mainRegistry, r, binaryString, hexaString);

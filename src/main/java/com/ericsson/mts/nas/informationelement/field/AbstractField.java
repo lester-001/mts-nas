@@ -28,6 +28,7 @@ import java.io.IOException;
         @JsonSubTypes.Type(value = HexadecimalField.class, name = "HEXA"),
         @JsonSubTypes.Type(value = BinaryField.class, name = "BIN"),
         @JsonSubTypes.Type(value = MultipleField.class, name = "MULTI"),
+        @JsonSubTypes.Type(value = ExtMultipleField.class, name = "EXTMULTI"),
         @JsonSubTypes.Type(value = BinaryLengthField.class, name = "BINLENGTH")
 })
 public abstract class AbstractField {

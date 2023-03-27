@@ -5,6 +5,7 @@ import com.ericsson.mts.nas.informationelement.field.AbstractField;
 import com.ericsson.mts.nas.informationelement.field.AbstractTranslatorField;
 import com.ericsson.mts.nas.informationelement.field.FieldMapContainer;
 import com.ericsson.mts.nas.informationelement.field.translator.MultipleField;
+import com.ericsson.mts.nas.informationelement.field.translator.ExtMultipleField;
 import com.ericsson.mts.nas.informationelement.field.wrapper.ChoiceField;
 import com.ericsson.mts.nas.message.AbstractMessage;
 import com.ericsson.mts.nas.message.InformationElementsContainer;
@@ -14,10 +15,15 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Registry {
     private ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     private Messages messages;
     private InformationElements informationElements;
+
+    protected Logger logger = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
     public void init() {
         for (AbstractMessage message : messages.getMessages()) {
@@ -49,6 +55,7 @@ public class Registry {
 
         for (AbstractInformationElement informationElement : informationElements.getElements()) {
             informationElement.name =  convertToCamelCase(informationElement.name);
+            logger.trace("\n\nEnter in field " + informationElement.name);
             for (AbstractField abstractField : informationElement.pdu) {
                 initAbstractField(abstractField);
             }
@@ -86,6 +93,12 @@ public class Registry {
         }
         else if (abstractField instanceof MultipleField) {
             MultipleField multipleField = (MultipleField) abstractField;
+            for(AbstractField abstractField1: multipleField.pdu){
+                initAbstractField(abstractField1);
+            }
+        }
+        else if (abstractField instanceof ExtMultipleField) {
+            ExtMultipleField multipleField = (ExtMultipleField) abstractField;
             for(AbstractField abstractField1: multipleField.pdu){
                 initAbstractField(abstractField1);
             }

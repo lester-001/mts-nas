@@ -61,7 +61,7 @@ public class Message extends AbstractMessage {
         }
 
         if(null != optional){
-//            r.enterObject("Optional");
+            r.enterObject(name);
             for (String name : optionalMap.inverse().values()){
                 r.enterObject(name);
                 if(r.isElementExist()){
@@ -77,7 +77,7 @@ public class Message extends AbstractMessage {
                     r.leaveObject(name);
                 }
             }
-//            r.leaveObject("Optional");
+            r.leaveObject(name);
         }
 
         if(null != additionnal) {

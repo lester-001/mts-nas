@@ -34,6 +34,7 @@ public class XMLFormatReader implements FormatReader {
     private Logger logger = LoggerFactory.getLogger(XMLFormatReader.class.getSimpleName());
     private String ignoredObject;
     private Element currentNode;
+    private Element rootNode = null;
     private Stack<Element> arrayStack = new Stack<Element>();
 
     private boolean elementExist = true;
@@ -54,6 +55,7 @@ public class XMLFormatReader implements FormatReader {
         dbf.setXIncludeAware(false);
         dbf.setExpandEntityReferences(false);
         this.currentNode = dbf.newDocumentBuilder().parse(inputStream).getDocumentElement();
+        rootNode = this.currentNode;
         print(this.currentNode);
         ignoredObject = type;
     }
@@ -62,7 +64,7 @@ public class XMLFormatReader implements FormatReader {
         if (!ignoredObject.equals(name)) {
             elementExist = true;
             if (name != null) {
-                logger.trace("Enter object {}", name);
+                logger.trace("Enter object {} {}", name, currentNode.getTagName());
 
                 currentNode = getChildNode(getFromStack(currentNode), name);
             } else {
@@ -82,8 +84,9 @@ public class XMLFormatReader implements FormatReader {
     public void leaveObject(String name) {
         if (!ignoredObject.equals(name)) {
             if (name != null) {
-                logger.trace("Leave object {}", name);
-                currentNode = (Element) currentNode.getParentNode();
+                logger.trace("Leave object {}  {}", name, currentNode.getTagName());
+                if (currentNode != rootNode)
+                    currentNode = (Element) currentNode.getParentNode();
             } else {
                 currentNode = (Element) currentNode.getParentNode();
                 if (currentNode == null || currentNode.getAttribute(IS_ARRAY).equals("")) {
